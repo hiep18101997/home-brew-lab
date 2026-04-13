@@ -43,3 +43,18 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# AI Agents / Claude Code
+.agents/
+.claude/
+cursors_rules/
+.cursorrules
+.github/copilot-instructions.md
+
+# Skills
+skills/
+
+# Local configs (machine-specific)
+*.local.yaml
+*.local.yml
+.worktrees/

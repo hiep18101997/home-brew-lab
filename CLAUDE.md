@@ -11,7 +11,7 @@ Flutter app for home baristas to track coffee beans, log brews, and follow brew 
 ```bash
 flutter pub get          # Install dependencies
 flutter run             # Run on connected device/emulator
-flutter test            # Run all tests
+flutter test            # Run all tests 
 flutter test test/widget_test.dart  # Run a specific test
 flutter build apk --debug   # Build debug APK (Android)
 flutter build ios --debug    # Build debug IPA (iOS)
