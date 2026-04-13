@@ -57,3 +57,4 @@ skills/
 # Local configs (machine-specific)
 *.local.yaml
 *.local.yml
+.worktrees/
