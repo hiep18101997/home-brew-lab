@@ -1,4 +1,4 @@
-import '../repositories/bean_repository.dart';
+import '../../../../domain/repositories/bean_repository.dart';
 
 class DeleteBean {
   final BeanRepository repository;
