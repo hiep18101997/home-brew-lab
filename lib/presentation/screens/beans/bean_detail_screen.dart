@@ -1,46 +1,55 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../../providers/beans_provider.dart';
 import '../../../domain/entities/bean.dart';
+import '../../../features/beans/presentation/bloc/beans_bloc.dart';
+import '../../../features/beans/presentation/bloc/beans_event.dart';
+import '../../../features/beans/presentation/bloc/beans_state.dart';
 
-class BeanDetailScreen extends ConsumerWidget {
+class BeanDetailScreen extends StatelessWidget {
   final String id;
 
   const BeanDetailScreen({super.key, required this.id});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final beansAsync = ref.watch(beansProvider);
-
-    return beansAsync.when(
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      ),
-      error: (e, _) => Scaffold(
-        body: Center(child: Text('Error: $e')),
-      ),
-      data: (beans) {
-        final bean = beans.where((b) => b.id == id).firstOrNull;
-        if (bean == null) {
-          return Scaffold(
-            appBar: AppBar(),
-            body: const Center(child: Text('Bean not found')),
+  Widget build(BuildContext context) {
+    return BlocBuilder<BeansBloc, BeansState>(
+      builder: (context, state) {
+        if (state is BeansLoading) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
           );
         }
-        return _BeanDetailContent(bean: bean);
+        if (state is BeansError) {
+          return Scaffold(
+            body: Center(child: Text('Error: ${state.message}')),
+          );
+        }
+        if (state is BeansSuccess) {
+          final bean = state.beans.where((b) => b.id == id).firstOrNull;
+          if (bean == null) {
+            return Scaffold(
+              appBar: AppBar(),
+              body: const Center(child: Text('Bean not found')),
+            );
+          }
+          return _BeanDetailContent(bean: bean);
+        }
+        return const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        );
       },
     );
   }
 }
 
-class _BeanDetailContent extends ConsumerWidget {
+class _BeanDetailContent extends StatelessWidget {
   final Bean bean;
 
   const _BeanDetailContent({required this.bean});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final weightPercent = bean.weightInitial != null && bean.weightInitial! > 0
         ? bean.weightRemaining / bean.weightInitial!
         : 1.0;
@@ -60,7 +69,7 @@ class _BeanDetailContent extends ConsumerWidget {
           ),
           IconButton(
             icon: const Icon(Icons.delete),
-            onPressed: () => _showDeleteDialog(context, ref),
+            onPressed: () => _showDeleteDialog(context),
           ),
         ],
       ),
@@ -181,21 +190,21 @@ class _BeanDetailContent extends ConsumerWidget {
     );
   }
 
-  void _showDeleteDialog(BuildContext context, WidgetRef ref) {
+  void _showDeleteDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Delete Bean?'),
         content: Text('Are you sure you want to delete "${bean.name}"?'),
         actions: [
           TextButton(
-            onPressed: () => context.pop(),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           FilledButton(
             onPressed: () {
-              ref.read(beansProvider.notifier).deleteBean(bean.id);
-              Navigator.pop(context);
+              context.read<BeansBloc>().add(BeanDeleted(bean.id));
+              Navigator.pop(dialogContext);
               context.pop();
             },
             child: const Text('Delete'),
