@@ -1,4 +1,4 @@
-import '../repositories/brew_repository.dart';
+import '../../../../domain/repositories/brew_repository.dart';
 
 class DeleteBrewLog {
   final BrewRepository repository;

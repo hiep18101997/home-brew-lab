@@ -1,5 +1,5 @@
-import '../repositories/brew_repository.dart';
-import '../../domain/entities/brew_log.dart';
+import '../../../../domain/repositories/brew_repository.dart';
+import '../../../../domain/entities/brew_log.dart';
 
 class CreateBrewLog {
   final BrewRepository repository;
