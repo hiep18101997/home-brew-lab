@@ -10,6 +10,7 @@ import 'presentation/screens/brew/new_brew_screen.dart';
 import 'presentation/screens/brew/brew_timer_screen.dart';
 import 'presentation/screens/brew/brew_history_screen.dart';
 import 'presentation/screens/analytics/analytics_screen.dart';
+import 'presentation/screens/recipes/recipe_finder_screen.dart';
 import 'presentation/screens/profile/profile_screen.dart';
 
 final _router = GoRouter(
@@ -24,6 +25,7 @@ final _router = GoRouter(
     GoRoute(path: '/brew/timer', builder: (_, __) => const BrewTimerScreen()),
     GoRoute(path: '/brew/history', builder: (_, __) => const BrewHistoryScreen()),
     GoRoute(path: '/analytics', builder: (_, __) => const AnalyticsScreen()),
+    GoRoute(path: '/recipes', builder: (_, __) => const RecipeFinderScreen()),
     GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
   ],
 );

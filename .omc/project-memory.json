@@ -164,6 +164,18 @@
       "type": "file"
     },
     {
+      "path": "lib\\app.dart",
+      "accessCount": 8,
+      "lastAccessed": 1776186890217,
+      "type": "file"
+    },
+    {
+      "path": "lib\\presentation\\screens\\home\\home_screen.dart",
+      "accessCount": 7,
+      "lastAccessed": 1776186911979,
+      "type": "file"
+    },
+    {
       "path": "lib\\presentation\\screens\\beans\\bean_list_screen.dart",
       "accessCount": 6,
       "lastAccessed": 1776184970493,
@@ -188,15 +200,9 @@
       "type": "file"
     },
     {
-      "path": "lib\\app.dart",
-      "accessCount": 5,
-      "lastAccessed": 1776186074909,
-      "type": "file"
-    },
-    {
-      "path": "lib\\presentation\\screens\\home\\home_screen.dart",
+      "path": "lib\\presentation\\screens\\recipes\\recipe_finder_screen.dart",
       "accessCount": 4,
-      "lastAccessed": 1776186135477,
+      "lastAccessed": 1776186962413,
       "type": "file"
     },
     {
@@ -210,6 +216,12 @@
       "accessCount": 3,
       "lastAccessed": 1776182688229,
       "type": "directory"
+    },
+    {
+      "path": "lib\\presentation\\providers\\grinder_settings_provider.dart",
+      "accessCount": 3,
+      "lastAccessed": 1776186843147,
+      "type": "file"
     },
     {
       "path": ".worktrees\\clean-arch-refactor\\lib",
@@ -347,6 +359,18 @@
       "path": "lib\\presentation\\screens\\analytics\\analytics_screen.dart",
       "accessCount": 1,
       "lastAccessed": 1776186040881,
+      "type": "file"
+    },
+    {
+      "path": "lib\\domain\\entities\\grinder_profile.dart",
+      "accessCount": 1,
+      "lastAccessed": 1776186628867,
+      "type": "file"
+    },
+    {
+      "path": "lib\\data\\grinder_settings_repository.dart",
+      "accessCount": 1,
+      "lastAccessed": 1776186735831,
       "type": "file"
     }
   ],

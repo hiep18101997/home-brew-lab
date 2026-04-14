@@ -1,4 +1,4 @@
-# Brew Analytics Dashboard - Feature Specification
+# Recipe Finder by Equipment - Feature Specification
 
 **Date**: 2026-04-15
 **Status**: Draft
@@ -7,43 +7,54 @@
 
 ## 1. Overview
 
-Thêm **Brew Analytics Dashboard** - một màn hình mới hiển thị insights và visualizations từ brew history data.
+Thêm mục **Recipe Finder** - cho phép user tìm kiếm và lọc công thức pha coffee theo:
+- Máy pha (V60, Chemex, Espresso, AeroPress, French Press, Phin)
+- Máy xay (bao gồm cả hãng Trung Quốc)
+- Cỡ xay cho từng máy xay cụ thể
 
-## 2. Screens
+## 2. Grinder Brands (VN + International + Chinese)
 
-- New: `/analytics` route
-- Add Analytics tab to bottom navigation
+### Taiwan/International
+- **1Zpresso**: JX, JX-Pro, K-Plus, ZP6 Special
+- **Commandante**: C40
+- **Baratza**: Encore, Virtuoso
+- **Hario**: Skerton, Mini Mill
 
-## 3. Dependencies
+### Chinese Brands
+- **Timemore**: C2, C3, Slim, Black Mirror, Basil
+- **HELGE**: H1, H2, H3
+- **SSURE**: S1, S2, S3
+- **巫师 (Wizard)**: M1, M2
+- **Xiaomi**: Smart Grinder
+- **CAFELATTI**: K1, K2
 
-```yaml
-fl_chart: ^0.66.0
-```
+## 3. Files to Create
 
-## 4. Files to Create
+- `lib/domain/entities/grinder_profile.dart`
+- `lib/data/grinder_settings_repository.dart`
+- `lib/presentation/screens/recipes/recipe_finder_screen.dart`
+- `lib/presentation/providers/grinder_settings_provider.dart`
 
-- `lib/presentation/screens/analytics/analytics_screen.dart`
-- `lib/presentation/providers/analytics_provider.dart`
+## 4. Files to Modify
 
-## 5. Files to Modify
+- `lib/app.dart` - Add `/recipes` route
+- `lib/presentation/screens/home/home_screen.dart` - Add Recipes tab
 
-- `pubspec.yaml` - add fl_chart
-- `lib/app.dart` - add route
-- `lib/presentation/screens/home/home_screen.dart` - add tab
+## 5. UI Components
 
-## 6. Features
+### Recipe Finder Screen
+- Top: Method selector (chips) - all brew methods
+- Middle: Grinder selection (Brand → Model dropdowns)
+- Bottom: Recipe cards with grind settings
 
-### A. Summary Stats
-- Total brews, Average rating, Favorite method, Beans used
+### Grinder Selection
+- Brand dropdown (sorted by popularity)
+- Model dropdown (dependent on brand)
+- Shows recommended settings for selected method
 
-### B. Brews Per Week Chart
-- Bar chart (last 8 weeks)
-
-### C. Method Distribution
-- Pie chart
-
-### D. Rating Trend
-- Line chart (last 30 days)
-
-### E. Bean Usage
-- Consumption tracking, "Brews left" estimate
+### Recipe Card
+- Method icon
+- Dose/Yield
+- Grind size (as clicks or number)
+- Brew time
+- Notes/tips

@@ -36,3 +36,5 @@
 {"t":0,"agent":"system","event":"mode_change","mode_from":"none","mode_to":"autopilot"}
 {"t":0,"agent":"acbc226","agent_type":"Explore","event":"agent_start","parent_mode":"none"}
 {"t":0,"agent":"acbc226","agent_type":"Explore","event":"agent_stop","success":true,"duration_ms":47915}
+{"t":0,"agent":"system","event":"keyword_detected","keyword":"autopilot"}
+{"t":0,"agent":"system","event":"mode_change","mode_from":"none","mode_to":"autopilot"}
