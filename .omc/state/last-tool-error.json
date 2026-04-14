@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"mkdir -p \\\"E:/AI Bootcamp/home-brew-lab/lib/presentation/screens/analytics\\\" && cat > \\\"E:/AI Bootcamp/home-brew-lab/lib/presentation/screens/analytics/analytics_screen.dart\\\" << 'SCREEOF'...",
+  "error": "Exit code 2\n/usr/bin/bash: -c: line 259: unexpected EOF while looking for matching `''",
+  "timestamp": "2026-04-14T17:00:04.862Z",
+  "retry_count": 1
+}

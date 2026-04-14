@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../beans/bean_list_screen.dart';
 import '../brew/brew_history_screen.dart';
+import '../analytics/analytics_screen.dart';
 import '../profile/profile_screen.dart';
 import 'widgets/home_content.dart';
 import '../../../core/theme/app_theme.dart';
@@ -22,6 +23,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     const HomeContent(),
     const BeanListScreen(),
     const BrewHistoryScreen(),
+    const AnalyticsScreen(),
     const ProfileScreen(),
   ];
 
@@ -107,11 +109,18 @@ class _PolishedNavBar extends StatelessWidget {
                 onTap: () => onDestinationSelected(2),
               ),
               _NavItem(
+                icon: Icons.bar_chart_outlined,
+                selectedIcon: Icons.bar_chart,
+                label: 'Analytics',
+                isSelected: currentIndex == 3,
+                onTap: () => onDestinationSelected(3),
+              ),
+              _NavItem(
                 icon: Icons.person_outlined,
                 selectedIcon: Icons.person,
                 label: 'Profile',
-                isSelected: currentIndex == 3,
-                onTap: () => onDestinationSelected(3),
+                isSelected: currentIndex == 4,
+                onTap: () => onDestinationSelected(4),
               ),
             ],
           ),
