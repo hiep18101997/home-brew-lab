@@ -1,4 +1,8 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../domain/entities/bean.dart';
 import '../../domain/repositories/bean_repository.dart';
 
@@ -106,6 +110,17 @@ class BeansNotifier extends StateNotifier<AsyncValue<List<Bean>>> {
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
+  }
+
+  /// Save processed bean image to app documents directory
+  Future<String> saveBeanImage(Uint8List imageBytes, String beanId) async {
+    final dir = Directory('${(await getApplicationDocumentsDirectory()).path}/beans');
+    if (!dir.existsSync()) {
+      dir.createSync(recursive: true);
+    }
+    final file = File('${dir.path}/$beanId.png');
+    await file.writeAsBytes(imageBytes);
+    return file.path;
   }
 }
 
