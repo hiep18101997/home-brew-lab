@@ -1,0 +1,54 @@
+name: Build and Deploy to DeployGate
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build debug APK
+        run: flutter build apk --debug
+
+      - name: Upload APK as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug.apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+
+    steps:
+      - name: Download APK
+        uses: actions/download-artifact@v4
+        with:
+          name: app-debug.apk
+
+      - name: Deploy to DeployGate
+        run: |
+          curl -X POST "https://deploygate.com/api/users/project-n7twz/apps" \
+            -H "Authorization: Bearer ${{ secrets.DEPLOYGATE_API_TOKEN }}" \
+            -F "file=@app-debug.apk" \
+            -F "message=GitHub Actions: ${{ github.event.head_commit.message }}" \
+            -F "package_name=com.homebrewlab.coffee_brewing_companion" \
+            -F "version_name=1.0.0" \
+            -F "build_type=debug"
