@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -260,18 +261,27 @@ class _BeanCard extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      // Coffee icon with roast-level color tinting
+                      // Bean image or coffee icon
                       Container(
-                        padding: const EdgeInsets.all(12),
+                        width: 60,
+                        height: 60,
                         decoration: BoxDecoration(
                           color: surfaceHighColor,
                           borderRadius: BorderRadius.circular(12),
+                          image: bean.imageUrl != null
+                              ? DecorationImage(
+                                  image: FileImage(File(bean.imageUrl!)),
+                                  fit: BoxFit.cover,
+                                )
+                              : null,
                         ),
-                        child: Icon(
-                          Icons.coffee,
-                          color: primaryColor,
-                          size: 24,
-                        ),
+                        child: bean.imageUrl == null
+                            ? Icon(
+                                Icons.coffee,
+                                color: primaryColor,
+                                size: 24,
+                              )
+                            : null,
                       ),
                       const SizedBox(width: 14),
                       Expanded(

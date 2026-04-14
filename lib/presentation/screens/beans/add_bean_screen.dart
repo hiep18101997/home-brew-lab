@@ -4,12 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:uuid/uuid.dart';
-import 'package:google_mlkit_selfie_segmentation/google_mlkit_selfie_segmentation.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../providers/beans_provider.dart';
 import '../../../domain/entities/bean.dart';
@@ -39,9 +37,6 @@ class _AddBeanScreenState extends ConsumerState<AddBeanScreen> {
   bool _isProcessingImage = false;
   Uint8List? _processedImageBytes;
   final ImagePicker _imagePicker = ImagePicker();
-  final SelfieSegmenter _segmenter = SelfieSegmenter(
-    mode: SegmenterMode.single,
-  );
 
   final List<String> _roastLevels = ['Light', 'Medium-Light', 'Medium', 'Medium-Dark', 'Dark'];
 
@@ -53,7 +48,6 @@ class _AddBeanScreenState extends ConsumerState<AddBeanScreen> {
     _varietyController.dispose();
     _processController.dispose();
     _notesController.dispose();
-    _segmenter.close();
     super.dispose();
   }
 
@@ -413,13 +407,13 @@ class _AddBeanScreenState extends ConsumerState<AddBeanScreen> {
         return;
       }
 
-      // Process image with ML Kit background removal
-      final processedBytes = await _processImage(File(pickedFile.path));
+      // Read original image bytes (no background removal - ML Kit Selfie Segmentation only works for people)
+      final bytes = await File(pickedFile.path).readAsBytes();
 
       if (mounted) {
         setState(() {
-          _processedImageBytes = processedBytes;
-          _imageUrl = null;
+          _processedImageBytes = bytes;
+          _imageUrl = pickedFile.path;
           _isProcessingImage = false;
         });
       }
@@ -427,74 +421,8 @@ class _AddBeanScreenState extends ConsumerState<AddBeanScreen> {
       if (mounted) {
         setState(() => _isProcessingImage = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to process image: $e')),
+          SnackBar(content: Text('Failed to pick image: $e')),
         );
-      }
-    }
-  }
-
-  Future<Uint8List?> _processImage(File imageFile) async {
-    try {
-      final inputImage = InputImage.fromFile(imageFile);
-      final mask = await _segmenter.processImage(inputImage);
-
-      // Read original image
-      final bytes = await imageFile.readAsBytes();
-      final image = img.decodeImage(bytes);
-
-      if (image == null) return bytes;
-
-      // Get mask dimensions - ML Kit mask dimensions (these are non-null in SegmentationMask)
-      // Using dynamic to bypass analyzer issues with ML Kit's mask type
-      final dynamic maskDyn = mask;
-      final int maskWidth = maskDyn.width as int;
-      final int maskHeight = maskDyn.height as int;
-      final List<double> confidences = maskDyn.confidences as List<double>;
-
-      // Create output image with alpha channel
-      final output = img.Image(
-        width: image.width,
-        height: image.height,
-        numChannels: 4, // RGBA
-      );
-
-      // Scale factors for mask to image mapping
-      final double scaleX = maskWidth / image.width;
-      final double scaleY = maskHeight / image.height;
-
-      // Process each pixel
-      for (int y = 0; y < image.height; y++) {
-        for (int x = 0; x < image.width; x++) {
-          // Map image pixel to mask pixel
-          final maskX = (x * scaleX).floor().clamp(0, maskWidth - 1);
-          final maskY = (y * scaleY).floor().clamp(0, maskHeight - 1);
-
-          // Get confidence from mask (0.0 = background, 1.0 = foreground/person)
-          // For coffee beans, we invert - higher confidence = likely background in selfie segmentation
-          final confidence = confidences[maskY * maskWidth + maskX];
-
-          final pixel = image.getPixel(x, y);
-
-          // Selfie segmentation: values > 0.5 are foreground (person)
-          // For coffee bean, treat as foreground (keep it)
-          if (confidence > 0.5) {
-            output.setPixelRgba(x, y, pixel.r.toInt(), pixel.g.toInt(), pixel.b.toInt(), 255);
-          } else {
-            // Background - make transparent
-            output.setPixelRgba(x, y, pixel.r.toInt(), pixel.g.toInt(), pixel.b.toInt(), 0);
-          }
-        }
-      }
-
-      // Encode to PNG with transparency
-      return Uint8List.fromList(img.encodePng(output));
-    } catch (e) {
-      // Fallback: return original image if ML Kit fails
-      try {
-        final bytes = await imageFile.readAsBytes();
-        return bytes;
-      } catch (_) {
-        return null;
       }
     }
   }
