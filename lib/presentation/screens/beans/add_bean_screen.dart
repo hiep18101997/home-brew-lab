@@ -1,8 +1,13 @@
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:uuid/uuid.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../providers/beans_provider.dart';
 import '../../../domain/entities/bean.dart';
@@ -26,6 +31,12 @@ class _AddBeanScreenState extends ConsumerState<AddBeanScreen> {
   String? _roastLevel;
   DateTime? _roastDate;
   double _weight = 250;
+
+  // Image picker state
+  String? _imageUrl;
+  bool _isProcessingImage = false;
+  Uint8List? _processedImageBytes;
+  final ImagePicker _imagePicker = ImagePicker();
 
   final List<String> _roastLevels = ['Light', 'Medium-Light', 'Medium', 'Medium-Dark', 'Dark'];
 
@@ -69,7 +80,20 @@ class _AddBeanScreenState extends ConsumerState<AddBeanScreen> {
           ),
         ],
       ),
-      body: Form(
+      body: Column(
+        children: [
+          // Bean Image Picker - Hero Image
+          _BeanImagePicker(
+            imageUrl: _imageUrl,
+            processedImageBytes: _processedImageBytes,
+            isProcessing: _isProcessingImage,
+            onCameraTap: () => _pickImage(ImageSource.camera),
+            onGalleryTap: () => _pickImage(ImageSource.gallery),
+            onDeleteTap: _removeImage,
+          ),
+          // Form
+          Expanded(
+            child: Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.all(24),
@@ -345,29 +369,108 @@ class _AddBeanScreenState extends ConsumerState<AddBeanScreen> {
             ),
             const SizedBox(height: 24),
           ],
-        ),
+            ),
+          ),
+          ),
+        ],
       ),
     );
   }
 
-  void _saveBean() {
-    if (_formKey.currentState!.validate()) {
-      final bean = Bean.create(
-        name: _nameController.text,
-        roaster: _roasterController.text,
-        origin: _originController.text.isNotEmpty ? _originController.text : null,
-        variety: _varietyController.text.isNotEmpty ? _varietyController.text : null,
-        process: _processController.text.isNotEmpty ? _processController.text : null,
-        roastLevel: _roastLevel,
-        roastDate: _roastDate,
-        weightRemaining: _weight,
-        weightInitial: _weight,
-        notes: _notesController.text.isNotEmpty ? _notesController.text : null,
+  Future<void> _pickImage(ImageSource source) async {
+    if (source == ImageSource.camera) {
+      final status = await Permission.camera.request();
+      if (!status.isGranted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Camera permission required'),
+              action: SnackBarAction(label: 'Settings', onPressed: openAppSettings),
+            ),
+          );
+        }
+        return;
+      }
+    }
+
+    setState(() => _isProcessingImage = true);
+
+    try {
+      final XFile? pickedFile = await _imagePicker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
       );
 
-      ref.read(beansProvider.notifier).addBean(bean);
-      context.pop();
+      if (pickedFile == null) {
+        setState(() => _isProcessingImage = false);
+        return;
+      }
+
+      final bytes = await pickedFile.readAsBytes();
+
+      if (mounted) {
+        setState(() {
+          _processedImageBytes = bytes;
+          _imageUrl = null;
+          _isProcessingImage = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isProcessingImage = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to process image: $e')),
+        );
+      }
     }
+  }
+
+  void _removeImage() {
+    setState(() {
+      _imageUrl = null;
+      _processedImageBytes = null;
+    });
+  }
+
+  Future<void> _saveBean() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final beanId = const Uuid().v4();
+
+    String? finalImageUrl;
+    if (_processedImageBytes != null) {
+      try {
+        finalImageUrl = await ref.read(beansProvider.notifier).saveBeanImage(
+          _processedImageBytes!,
+          beanId,
+        );
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to save image: $e')),
+          );
+        }
+      }
+    }
+
+    final bean = Bean.create(
+      name: _nameController.text,
+      roaster: _roasterController.text,
+      origin: _originController.text.isNotEmpty ? _originController.text : null,
+      variety: _varietyController.text.isNotEmpty ? _varietyController.text : null,
+      process: _processController.text.isNotEmpty ? _processController.text : null,
+      roastLevel: _roastLevel,
+      roastDate: _roastDate,
+      weightRemaining: _weight,
+      weightInitial: _weight,
+      notes: _notesController.text.isNotEmpty ? _notesController.text : null,
+      imageUrl: finalImageUrl,
+    );
+
+    await ref.read(beansProvider.notifier).addBean(bean);
+
+    if (mounted) context.pop();
   }
 }
 
@@ -589,6 +692,131 @@ class _CustomSlider extends StatelessWidget {
         min: min,
         max: max,
         onChanged: onChanged,
+      ),
+    );
+  }
+}
+
+class _BeanImagePicker extends StatelessWidget {
+  final String? imageUrl;
+  final Uint8List? processedImageBytes;
+  final bool isProcessing;
+  final VoidCallback onCameraTap;
+  final VoidCallback onGalleryTap;
+  final VoidCallback onDeleteTap;
+
+  const _BeanImagePicker({
+    this.imageUrl,
+    this.processedImageBytes,
+    required this.isProcessing,
+    required this.onCameraTap,
+    required this.onGalleryTap,
+    required this.onDeleteTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasImage = imageUrl != null || processedImageBytes != null;
+
+    return Container(
+      height: 200,
+      width: double.infinity,
+      margin: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 2)),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (isProcessing)
+            const Center(child: CircularProgressIndicator())
+          else if (processedImageBytes != null)
+            Image.memory(
+              processedImageBytes!,
+              fit: BoxFit.cover,
+            )
+          else if (imageUrl != null)
+            Image.file(
+              File(imageUrl!),
+              fit: BoxFit.cover,
+            )
+          else
+            GestureDetector(
+              onTap: onCameraTap,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.add_a_photo_outlined,
+                    size: 48,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Tap to add photo',
+                    style: GoogleFonts.manrope(
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (hasImage)
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [Colors.transparent, Colors.black.withOpacity(0.3)],
+                  ),
+                ),
+              ),
+            ),
+          Positioned(
+            top: 8,
+            right: 8,
+            child: Row(
+              children: [
+                _ActionButton(icon: Icons.camera_alt, onTap: onCameraTap),
+                const SizedBox(width: 8),
+                _ActionButton(icon: Icons.photo_library, onTap: onGalleryTap),
+                if (hasImage) ...[
+                  const SizedBox(width: 8),
+                  _ActionButton(icon: Icons.delete, onTap: onDeleteTap),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _ActionButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.5),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: Colors.white, size: 20),
       ),
     );
   }
