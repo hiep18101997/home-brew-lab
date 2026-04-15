@@ -58,3 +58,4 @@ skills/
 *.local.yaml
 *.local.yml
 .worktrees/
+.omc/
