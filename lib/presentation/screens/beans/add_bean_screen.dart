@@ -9,6 +9,8 @@ import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:uuid/uuid.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/services/ocr_service.dart';
+import '../../../core/services/bean_info_parser.dart';
 import '../../providers/beans_provider.dart';
 import '../../../domain/entities/bean.dart';
 
@@ -37,6 +39,10 @@ class _AddBeanScreenState extends ConsumerState<AddBeanScreen> {
   bool _isProcessingImage = false;
   Uint8List? _processedImageBytes;
   final ImagePicker _imagePicker = ImagePicker();
+  final OcrService _ocrService = OcrService();
+  final BeanInfoParser _parser = BeanInfoParser();
+
+  bool _isScanning = false;
 
   final List<String> _roastLevels = ['Light', 'Medium-Light', 'Medium', 'Medium-Dark', 'Dark'];
 
@@ -48,6 +54,7 @@ class _AddBeanScreenState extends ConsumerState<AddBeanScreen> {
     _varietyController.dispose();
     _processController.dispose();
     _notesController.dispose();
+    _ocrService.dispose();
     super.dispose();
   }
 
@@ -87,9 +94,11 @@ class _AddBeanScreenState extends ConsumerState<AddBeanScreen> {
             imageUrl: _imageUrl,
             processedImageBytes: _processedImageBytes,
             isProcessing: _isProcessingImage,
+            isScanning: _isScanning,
             onCameraTap: () => _pickImage(ImageSource.camera),
             onGalleryTap: () => _pickImage(ImageSource.gallery),
             onDeleteTap: _removeImage,
+            onScanTap: _scanAndAutoFill,
           ),
           // Form
           Expanded(
@@ -434,6 +443,91 @@ class _AddBeanScreenState extends ConsumerState<AddBeanScreen> {
     });
   }
 
+  /// Scan coffee bag image and auto-fill form fields
+  Future<void> _scanAndAutoFill() async {
+    if (_imageUrl == null && _processedImageBytes == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please add a photo first', style: GoogleFonts.manrope()),
+          backgroundColor: AppColors.surfaceContainerHigh,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isScanning = true);
+
+    try {
+      // Extract text from image using OCR
+      String extractedText;
+      if (_processedImageBytes != null) {
+        extractedText = await _ocrService.extractTextFromBytes(_processedImageBytes!);
+      } else if (_imageUrl != null) {
+        extractedText = await _ocrService.extractTextFromImage(File(_imageUrl!));
+      } else {
+        return;
+      }
+
+      if (extractedText.trim().isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('No text found in image', style: GoogleFonts.manrope()),
+              backgroundColor: AppColors.surfaceContainerHigh,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Parse extracted text into bean info
+      final beanInfo = await _parser.parseBeanInfo(extractedText);
+
+      if (mounted) {
+        setState(() {
+          // Auto-fill form fields
+          if (beanInfo.name.isNotEmpty) _nameController.text = beanInfo.name;
+          if (beanInfo.roaster.isNotEmpty) _roasterController.text = beanInfo.roaster;
+          if (beanInfo.origin != null) _originController.text = beanInfo.origin!;
+          if (beanInfo.variety != null) _varietyController.text = beanInfo.variety!;
+          if (beanInfo.process != null) _processController.text = beanInfo.process!;
+          if (beanInfo.notes != null) _notesController.text = beanInfo.notes!;
+          if (beanInfo.roastLevel != null) {
+            _roastLevel = _normalizeRoastLevel(beanInfo.roastLevel!);
+          }
+          _isScanning = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Form auto-filled!', style: GoogleFonts.manrope()),
+            backgroundColor: AppColors.secondary,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isScanning = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Scan failed: $e', style: GoogleFonts.manrope()),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  String? _normalizeRoastLevel(String level) {
+    final upper = level.toUpperCase();
+    if (upper.contains('LIGHT')) return 'Light';
+    if (upper.contains('MEDIUM-LIGHT')) return 'Medium-Light';
+    if (upper.contains('MEDIUM-DARK') || upper.contains('MEDIUM DARK')) return 'Medium-Dark';
+    if (upper.contains('MEDIUM')) return 'Medium';
+    if (upper.contains('DARK')) return 'Dark';
+    return null;
+  }
+
   Future<void> _saveBean() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -702,17 +796,21 @@ class _BeanImagePicker extends StatelessWidget {
   final String? imageUrl;
   final Uint8List? processedImageBytes;
   final bool isProcessing;
+  final bool isScanning;
   final VoidCallback onCameraTap;
   final VoidCallback onGalleryTap;
   final VoidCallback onDeleteTap;
+  final VoidCallback onScanTap;
 
   const _BeanImagePicker({
     this.imageUrl,
     this.processedImageBytes,
     required this.isProcessing,
+    required this.isScanning,
     required this.onCameraTap,
     required this.onGalleryTap,
     required this.onDeleteTap,
+    required this.onScanTap,
   });
 
   @override
@@ -788,6 +886,11 @@ class _BeanImagePicker extends StatelessWidget {
                 const SizedBox(width: 8),
                 _ActionButton(icon: Icons.photo_library, onTap: onGalleryTap),
                 if (hasImage) ...[
+                  const SizedBox(width: 8),
+                  _ActionButton(
+                    icon: isScanning ? Icons.hourglass_empty : Icons.document_scanner,
+                    onTap: isScanning ? () {} : onScanTap,
+                  ),
                   const SizedBox(width: 8),
                   _ActionButton(icon: Icons.delete, onTap: onDeleteTap),
                 ],
