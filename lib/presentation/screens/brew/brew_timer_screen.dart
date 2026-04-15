@@ -116,7 +116,7 @@ class _BrewTimerScreenState extends ConsumerState<BrewTimerScreen>
               ),
             ),
 
-          const Spacer(),
+          const SizedBox(height: 20),
 
           // Control buttons
           Padding(
