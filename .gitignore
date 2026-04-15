@@ -59,3 +59,13 @@ skills/
 *.local.yml
 .worktrees/
 .omc/
+
+.omc/project-memory.json
+.omc/autopilot/spec.md
+.omc/state/hud-stdin-cache.json
+.omc/state/idle-notif-cooldown.json
+.omc/state/last-tool-error.json
+.omc/state/mission-state.json
+.omc/state/subagent-tracking.json
+.omc/state/sessions/e0c07ac5-c920-49be-b279-e158829ce965/autopilot-state.json
+.omc/state/sessions/e0c07ac5-c920-49be-b279-e158829ce965/cancel-signal-state.json

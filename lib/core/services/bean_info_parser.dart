@@ -5,8 +5,8 @@ import 'package:flutter/foundation.dart';
 /// Service to parse extracted text from coffee bag images
 /// Uses MiniMax API to extract structured bean information
 class BeanInfoParser {
-  // TODO: Replace with your MiniMax API key
-  static const String _apiKey = 'YOUR_MINIMAX_API_KEY';
+  // API key loaded from environment variable
+  static const String _apiKey = String.fromEnvironment('MINIMAX_API_KEY', defaultValue: '');
   static const String _apiBase = 'https://api.minimax.io/v1';
 
   /// Parse extracted OCR text into structured bean information
