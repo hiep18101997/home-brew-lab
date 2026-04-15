@@ -121,7 +121,7 @@ class _HomeContentState extends ConsumerState<HomeContent>
                           ),
                         ),
                         TextButton(
-                          onPressed: () {},
+                          onPressed: () => context.push('/brew/history'),
                           child: Text(
                             'View all',
                             style: GoogleFonts.manrope(
