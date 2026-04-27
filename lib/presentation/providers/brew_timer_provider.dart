@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../domain/constants/brew_methods.dart';
+import '../../core/constants/brew_methods.dart';
 import '../../domain/entities/brew_guide.dart';
 
 /// Timer state

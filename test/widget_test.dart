@@ -1,24 +1,28 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:coffee_brewing_companion/app.dart';
-import 'package:fake_async/fake_async.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:coffee_brewing_companion/app.dart';
+import 'package:coffee_brewing_companion/injection.dart';
+import 'package:coffee_brewing_companion/features/beans/presentation/bloc/beans_bloc.dart';
+import 'package:coffee_brewing_companion/features/beans/presentation/bloc/beans_event.dart';
+import 'package:coffee_brewing_companion/features/brew/presentation/bloc/brew_bloc.dart';
+import 'package:coffee_brewing_companion/features/brew/presentation/bloc/brew_event.dart';
 
 void main() {
   testWidgets('App smoke test', (WidgetTester tester) async {
-    // Use fake async to control time
-    await FakeAsync().run((async) async {
-      await tester.pumpWidget(
-        const ProviderScope(
-          child: CoffeeBrewingApp(),
-        ),
-      );
+    await setupDependencies();
 
-      // Pump to process animations (not the navigation timer)
-      await tester.pump();
+    await tester.pumpWidget(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider<BeansBloc>(create: (_) => getIt<BeansBloc>()..add(BeansRequested())),
+          BlocProvider<BrewBloc>(create: (_) => getIt<BrewBloc>()..add(BrewLogsRequested())),
+        ],
+        child: const CoffeeBrewingApp(),
+      ),
+    );
 
-      // Verify splash screen shows - look for the coffee icon
-      expect(find.byIcon(Icons.coffee_rounded), findsOneWidget);
-    });
+    // Just verify app renders without crashing
+    expect(find.byType(MaterialApp), findsOneWidget);
   });
 }

@@ -1,70 +1,42 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
-import '../../../core/theme/app_theme.dart';
-import '../../providers/beans_provider.dart';
-import '../../../domain/entities/bean.dart';
+import '../../../features/beans/domain/entities/bean.dart';
+import '../../../features/beans/presentation/bloc/beans_bloc.dart';
+import '../../../features/beans/presentation/bloc/beans_event.dart';
+import '../../../features/beans/presentation/bloc/beans_state.dart';
 
-class BeanDetailScreen extends ConsumerWidget {
+class BeanDetailScreen extends StatelessWidget {
   final String id;
 
   const BeanDetailScreen({super.key, required this.id});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final beansAsync = ref.watch(beansProvider);
-
-    return beansAsync.when(
-      loading: () => Scaffold(
-        backgroundColor: AppColors.background,
-        body: Center(
-          child: CircularProgressIndicator(color: AppColors.secondary),
-        ),
-      ),
-      error: (e, _) => Scaffold(
-        backgroundColor: AppColors.background,
-        body: Center(
-          child: Text(
-            'Error: $e',
-            style: GoogleFonts.manrope(color: AppColors.onSurfaceVariant),
-          ),
-        ),
-      ),
-      data: (beans) {
-        final bean = beans.where((b) => b.id == id).firstOrNull;
-        if (bean == null) {
-          return Scaffold(
-            backgroundColor: AppColors.background,
-            appBar: AppBar(
-              backgroundColor: AppColors.background,
-              surfaceTintColor: Colors.transparent,
-            ),
-            body: Center(
-              child: Text(
-                'Bean not found',
-                style: GoogleFonts.manrope(color: AppColors.onSurfaceVariant),
-              ),
-            ),
+  Widget build(BuildContext context) {
+    return BlocBuilder<BeansBloc, BeansState>(
+      builder: (context, state) {
+        if (state is BeansLoading) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
           );
         }
-        return _BeanDetailContent(
-          bean: bean,
-          onDelete: () {
-            ref.read(beansProvider.notifier).deleteBean(bean.id);
-            context.pop();
-          },
-          onEdit: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Edit coming soon',
-                  style: GoogleFonts.manrope(),
-                ),
-                backgroundColor: AppColors.surfaceContainerHigh,
-              ),
+        if (state is BeansError) {
+          return Scaffold(
+            body: Center(child: Text('Error: ${state.message}')),
+          );
+        }
+        if (state is BeansSuccess) {
+          final bean = state.beans.where((b) => b.id == id).firstOrNull;
+          if (bean == null) {
+            return Scaffold(
+              appBar: AppBar(),
+              body: const Center(child: Text('Bean not found')),
             );
-          },
+          }
+          return _BeanDetailContent(bean: bean);
+        }
+        return const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
         );
       },
     );
@@ -73,257 +45,143 @@ class BeanDetailScreen extends ConsumerWidget {
 
 class _BeanDetailContent extends StatelessWidget {
   final Bean bean;
-  final VoidCallback onDelete;
-  final VoidCallback onEdit;
 
-  const _BeanDetailContent({
-    required this.bean,
-    required this.onDelete,
-    required this.onEdit,
-  });
+  const _BeanDetailContent({required this.bean});
 
   @override
   Widget build(BuildContext context) {
     final weightPercent = bean.weightInitial != null && bean.weightInitial! > 0
         ? bean.weightRemaining / bean.weightInitial!
         : 1.0;
-    final isLowStock = bean.weightRemaining < 20;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
-        surfaceTintColor: Colors.transparent,
-        title: Text(
-          bean.name,
-          style: GoogleFonts.notoSerif(
-            fontSize: 22,
-            fontWeight: FontWeight.w400,
-            color: AppColors.onSurface,
-          ),
-        ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppColors.onSurface),
-          onPressed: () => context.pop(),
-        ),
+        title: Text(bean.name),
         actions: [
           IconButton(
-            icon: Icon(Icons.edit, color: AppColors.onSurfaceVariant),
-            onPressed: onEdit,
+            icon: const Icon(Icons.edit),
+            onPressed: () {
+              // Edit functionality - deferred to future iteration
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Edit coming soon')),
+              );
+            },
           ),
           IconButton(
-            icon: Icon(Icons.delete, color: AppColors.onSurfaceVariant),
+            icon: const Icon(Icons.delete),
             onPressed: () => _showDeleteDialog(context),
           ),
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        padding: const EdgeInsets.all(16),
         children: [
-          // Weight Card
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceContainer,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.coffee,
-                        size: 32,
-                        color: AppColors.primary,
-                      ),
+          // Weight card
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.coffee,
+                    size: 48,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    '${bean.weightRemaining.toStringAsFixed(0)}g',
+                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                  ),
+                  Text(
+                    'remaining',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  LinearProgressIndicator(
+                    value: weightPercent,
+                    minHeight: 8,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  const SizedBox(height: 8),
+                  if (bean.weightInitial != null)
+                    Text(
+                      'of ${bean.weightInitial!.toStringAsFixed(0)}g initial',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  if (bean.weightRemaining < 20) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
+                          Icon(Icons.warning, color: Colors.orange, size: 16),
+                          SizedBox(width: 4),
                           Text(
-                            '${bean.weightRemaining.toStringAsFixed(0)}g',
-                            style: GoogleFonts.notoSerif(
-                              fontSize: 40,
-                              fontWeight: FontWeight.w400,
-                              color: AppColors.onSurface,
-                              height: 1.1,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'remaining',
-                            style: GoogleFonts.manrope(
-                              fontSize: 14,
-                              color: AppColors.onSurfaceVariant,
-                            ),
+                            'Low stock warning',
+                            style: TextStyle(color: Colors.orange),
                           ),
                         ],
                       ),
                     ),
-                    if (isLowStock)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: AppColors.secondary.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.warning, color: AppColors.secondary, size: 14),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Low',
-                              style: GoogleFonts.manrope(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.secondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                   ],
-                ),
-                const SizedBox(height: 24),
-                // Progress bar
-                Container(
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerHigh,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                  child: FractionallySizedBox(
-                    alignment: Alignment.centerLeft,
-                    widthFactor: weightPercent,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: isLowStock ? AppColors.secondary : AppColors.primary,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                if (bean.weightInitial != null)
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      'of ${bean.weightInitial!.toStringAsFixed(0)}g initial',
-                      style: GoogleFonts.manrope(
-                        fontSize: 12,
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Details Card
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Details',
-                  style: GoogleFonts.notoSerif(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w400,
-                    color: AppColors.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _DetailRow(
-                  label: 'Roaster',
-                  value: bean.roaster,
-                  textColor: AppColors.onSurface,
-                  labelColor: AppColors.onSurfaceVariant,
-                ),
-                if (bean.origin != null)
-                  _DetailRow(
-                    label: 'Origin',
-                    value: bean.origin!,
-                    textColor: AppColors.onSurface,
-                    labelColor: AppColors.onSurfaceVariant,
-                  ),
-                if (bean.variety != null)
-                  _DetailRow(
-                    label: 'Variety',
-                    value: bean.variety!,
-                    textColor: AppColors.onSurface,
-                    labelColor: AppColors.onSurfaceVariant,
-                  ),
-                if (bean.process != null)
-                  _DetailRow(
-                    label: 'Process',
-                    value: bean.process!,
-                    textColor: AppColors.onSurface,
-                    labelColor: AppColors.onSurfaceVariant,
-                  ),
-                if (bean.roastLevel != null)
-                  _DetailRow(
-                    label: 'Roast Level',
-                    value: bean.roastLevel!,
-                    textColor: AppColors.onSurface,
-                    labelColor: AppColors.onSurfaceVariant,
-                  ),
-                if (bean.roastDate != null)
-                  _DetailRow(
-                    label: 'Roast Date',
-                    value: '${bean.roastDate!.day}/${bean.roastDate!.month}/${bean.roastDate!.year}',
-                    textColor: AppColors.onSurface,
-                    labelColor: AppColors.onSurfaceVariant,
-                  ),
-              ],
-            ),
-          ),
-
-          if (bean.notes != null && bean.notes!.isNotEmpty) ...[
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(16),
+                ],
               ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Details card
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Notes',
-                    style: GoogleFonts.notoSerif(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w400,
-                      color: AppColors.onSurface,
-                    ),
+                    'Details',
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    bean.notes!,
-                    style: GoogleFonts.manrope(
-                      fontSize: 14,
-                      color: AppColors.onSurfaceVariant,
-                      height: 1.6,
+                  const SizedBox(height: 16),
+                  _DetailRow(label: 'Roaster', value: bean.roaster),
+                  if (bean.origin != null) _DetailRow(label: 'Origin', value: bean.origin!),
+                  if (bean.variety != null) _DetailRow(label: 'Variety', value: bean.variety!),
+                  if (bean.process != null) _DetailRow(label: 'Process', value: bean.process!),
+                  if (bean.roastLevel != null) _DetailRow(label: 'Roast Level', value: bean.roastLevel!),
+                  if (bean.roastDate != null)
+                    _DetailRow(
+                      label: 'Roast Date',
+                      value: '${bean.roastDate!.day}/${bean.roastDate!.month}/${bean.roastDate!.year}',
                     ),
-                  ),
                 ],
+              ),
+            ),
+          ),
+
+          if (bean.notes != null && bean.notes!.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Notes',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(bean.notes!),
+                  ],
+                ),
               ),
             ),
           ],
@@ -335,72 +193,23 @@ class _BeanDetailContent extends StatelessWidget {
   void _showDeleteDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: AppColors.surfaceContainerHigh,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Delete Bean?',
-                style: GoogleFonts.notoSerif(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w400,
-                  color: AppColors.onSurface,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Are you sure you want to delete "${bean.name}"? This action cannot be undone.',
-                style: GoogleFonts.manrope(
-                  fontSize: 14,
-                  color: AppColors.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(
-                      'Cancel',
-                      style: GoogleFonts.manrope(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.error,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        onDelete();
-                      },
-                      child: Text(
-                        'Delete',
-                        style: GoogleFonts.manrope(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.onError,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete Bean?'),
+        content: Text('Are you sure you want to delete "${bean.name}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
           ),
-        ),
+          FilledButton(
+            onPressed: () {
+              context.read<BeansBloc>().add(BeanDeleted(bean.id));
+              Navigator.pop(dialogContext);
+              context.pop();
+            },
+            child: const Text('Delete'),
+          ),
+        ],
       ),
     );
   }
@@ -409,20 +218,13 @@ class _BeanDetailContent extends StatelessWidget {
 class _DetailRow extends StatelessWidget {
   final String label;
   final String value;
-  final Color textColor;
-  final Color labelColor;
 
-  const _DetailRow({
-    required this.label,
-    required this.value,
-    required this.textColor,
-    required this.labelColor,
-  });
+  const _DetailRow({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -430,20 +232,15 @@ class _DetailRow extends StatelessWidget {
             width: 100,
             child: Text(
               label,
-              style: GoogleFonts.manrope(
-                fontSize: 13,
-                color: labelColor,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
               ),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: GoogleFonts.manrope(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: textColor,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
         ],

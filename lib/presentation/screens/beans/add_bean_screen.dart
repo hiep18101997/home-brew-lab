@@ -1,27 +1,21 @@
-import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:uuid/uuid.dart';
-import '../../../core/theme/app_theme.dart';
-import '../../../core/services/ocr_service.dart';
-import '../../../core/services/bean_info_parser.dart';
-import '../../providers/beans_provider.dart';
-import '../../../domain/entities/bean.dart';
+import '../../../features/beans/domain/entities/bean.dart';
+import '../../../features/beans/presentation/bloc/beans_bloc.dart';
+import '../../../features/beans/presentation/bloc/beans_event.dart';
+import '../../../features/beans/presentation/bloc/beans_state.dart';
+import '../../widgets/sliders.dart';
 
-class AddBeanScreen extends ConsumerStatefulWidget {
+class AddBeanScreen extends StatefulWidget {
   const AddBeanScreen({super.key});
 
   @override
-  ConsumerState<AddBeanScreen> createState() => _AddBeanScreenState();
+  State<AddBeanScreen> createState() => _AddBeanScreenState();
 }
 
-class _AddBeanScreenState extends ConsumerState<AddBeanScreen> {
+class _AddBeanScreenState extends State<AddBeanScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _roasterController = TextEditingController();
@@ -34,16 +28,6 @@ class _AddBeanScreenState extends ConsumerState<AddBeanScreen> {
   DateTime? _roastDate;
   double _weight = 250;
 
-  // Image picker state
-  String? _imageUrl;
-  bool _isProcessingImage = false;
-  Uint8List? _processedImageBytes;
-  final ImagePicker _imagePicker = ImagePicker();
-  final OcrService _ocrService = OcrService();
-  final BeanInfoParser _parser = BeanInfoParser();
-
-  bool _isScanning = false;
-
   final List<String> _roastLevels = ['Light', 'Medium-Light', 'Medium', 'Medium-Dark', 'Dark'];
 
   @override
@@ -54,874 +38,186 @@ class _AddBeanScreenState extends ConsumerState<AddBeanScreen> {
     _varietyController.dispose();
     _processController.dispose();
     _notesController.dispose();
-    _ocrService.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        surfaceTintColor: Colors.transparent,
-        title: Text(
-          'Add Bean',
-          style: GoogleFonts.notoSerif(
-            fontSize: 24,
-            fontWeight: FontWeight.w400,
-            color: AppColors.onSurface,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: _saveBean,
-            child: Text(
-              'Save',
-              style: GoogleFonts.manrope(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppColors.secondary,
-              ),
-            ),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Bean Image Picker - Hero Image
-          _BeanImagePicker(
-            imageUrl: _imageUrl,
-            processedImageBytes: _processedImageBytes,
-            isProcessing: _isProcessingImage,
-            isScanning: _isScanning,
-            onCameraTap: () => _pickImage(ImageSource.camera),
-            onGalleryTap: () => _pickImage(ImageSource.gallery),
-            onDeleteTap: _removeImage,
-            onScanTap: _scanAndAutoFill,
-          ),
-          // Form
-          Expanded(
-            child: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(24),
-          children: [
-            // Essential Section
-            _SectionHeader(title: 'Essential', color: AppColors.onSurface),
-            const SizedBox(height: 12),
-            _TonalCard(
-              backgroundColor: AppColors.surfaceContainerLow,
-              child: Column(
-                children: [
-                  _DesignTextField(
-                    controller: _nameController,
-                    label: 'Bean Name *',
-                    hint: 'e.g., Ethiopia Yirgacheffe',
-                    textColor: AppColors.onSurface,
-                    hintColor: AppColors.onSurfaceVariant,
-                    accentColor: AppColors.secondary,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter bean name';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  _DesignTextField(
-                    controller: _roasterController,
-                    label: 'Roaster *',
-                    hint: 'e.g., Local Roaster',
-                    textColor: AppColors.onSurface,
-                    hintColor: AppColors.onSurfaceVariant,
-                    accentColor: AppColors.secondary,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter roaster name';
-                      }
-                      return null;
-                    },
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
-
-            // Origin Section
-            _SectionHeader(title: 'Origin', color: AppColors.onSurface),
-            const SizedBox(height: 12),
-            _TonalCard(
-              backgroundColor: AppColors.surfaceContainerLow,
-              child: Column(
-                children: [
-                  _DesignTextField(
-                    controller: _originController,
-                    label: 'Origin',
-                    hint: 'e.g., Ethiopia',
-                    textColor: AppColors.onSurface,
-                    hintColor: AppColors.onSurfaceVariant,
-                    accentColor: AppColors.secondary,
-                  ),
-                  const SizedBox(height: 16),
-                  _DesignTextField(
-                    controller: _varietyController,
-                    label: 'Variety',
-                    hint: 'e.g., Heirloom',
-                    textColor: AppColors.onSurface,
-                    hintColor: AppColors.onSurfaceVariant,
-                    accentColor: AppColors.secondary,
-                  ),
-                  const SizedBox(height: 16),
-                  _DesignTextField(
-                    controller: _processController,
-                    label: 'Process',
-                    hint: 'e.g., Washed, Natural',
-                    textColor: AppColors.onSurface,
-                    hintColor: AppColors.onSurfaceVariant,
-                    accentColor: AppColors.secondary,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
-
-            // Roast Details Section
-            _SectionHeader(title: 'Roast Details', color: AppColors.onSurface),
-            const SizedBox(height: 12),
-            _TonalCard(
-              backgroundColor: AppColors.surfaceContainerLow,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Roast Level',
-                    style: GoogleFonts.manrope(
-                      fontSize: 14,
-                      color: AppColors.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _roastLevels.map((level) => _RoastChip(
-                      label: level,
-                      isSelected: _roastLevel == level,
-                      selectedColor: AppColors.secondary,
-                      backgroundColor: AppColors.surfaceContainerHigh,
-                      textColor: AppColors.onSurface,
-                      selectedTextColor: AppColors.onSecondary,
-                      onTap: () => setState(() => _roastLevel = level),
-                    )).toList(),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Roast Date',
-                    style: GoogleFonts.manrope(
-                      fontSize: 14,
-                      color: AppColors.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  GestureDetector(
-                    onTap: () async {
-                      final date = await showDatePicker(
-                        context: context,
-                        initialDate: _roastDate ?? DateTime.now(),
-                        firstDate: DateTime.now().subtract(const Duration(days: 365)),
-                        lastDate: DateTime.now(),
-                        builder: (context, child) {
-                          return Theme(
-                            data: Theme.of(context).copyWith(
-                              colorScheme: const ColorScheme.dark(
-                                primary: AppColors.secondary,
-                                onPrimary: AppColors.onSecondary,
-                                surface: AppColors.surfaceContainerLow,
-                                onSurface: AppColors.onSurface,
-                              ),
-                            ),
-                            child: child!,
-                          );
-                        },
-                      );
-                      if (date != null) {
-                        setState(() => _roastDate = date);
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceContainer,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.calendar_today, color: AppColors.onSurfaceVariant, size: 20),
-                          const SizedBox(width: 12),
-                          Text(
-                            _roastDate != null
-                                ? DateFormat.yMMMd().format(_roastDate!)
-                                : 'Not set',
-                            style: GoogleFonts.manrope(
-                              fontSize: 15,
-                              color: _roastDate != null ? AppColors.onSurface : AppColors.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
-
-            // Quantity Section
-            _SectionHeader(title: 'Quantity', color: AppColors.onSurface),
-            const SizedBox(height: 12),
-            _TonalCard(
-              backgroundColor: AppColors.surfaceContainerLow,
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Weight',
-                        style: GoogleFonts.manrope(
-                          fontSize: 14,
-                          color: AppColors.onSurfaceVariant,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppColors.secondary,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          '${_weight.toStringAsFixed(0)}g',
-                          style: GoogleFonts.manrope(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.onSecondary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  _CustomSlider(
-                    value: _weight,
-                    min: 50,
-                    max: 1000,
-                    onChanged: (value) => setState(() => _weight = value),
-                    activeColor: AppColors.secondary,
-                    trackColor: AppColors.surfaceContainerHigh,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
-
-            // Notes Section
-            _SectionHeader(title: 'Notes', color: AppColors.onSurface),
-            const SizedBox(height: 12),
-            _TonalCard(
-              backgroundColor: AppColors.surfaceContainerLow,
-              child: _DesignTextField(
-                controller: _notesController,
-                label: 'Notes',
-                hint: 'Tasting notes, roaster info...',
-                textColor: AppColors.onSurface,
-                hintColor: AppColors.onSurfaceVariant,
-                accentColor: AppColors.secondary,
-                maxLines: 4,
-              ),
-            ),
-            const SizedBox(height: 40),
-
-            // Save Button
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.secondary, AppColors.secondary.withOpacity(0.9)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: TextButton(
-                onPressed: _saveBean,
-                style: TextButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.check, color: AppColors.onSecondary),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Save Bean',
-                      style: GoogleFonts.manrope(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.onSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-          ],
-            ),
-          ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _pickImage(ImageSource source) async {
-    if (source == ImageSource.camera) {
-      final status = await Permission.camera.request();
-      if (!status.isGranted) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Camera permission required'),
-              action: SnackBarAction(label: 'Settings', onPressed: openAppSettings),
-            ),
-          );
+    return BlocListener<BeansBloc, BeansState>(
+      listener: (context, state) {
+        if (state is BeansSuccess) {
+          context.pop();
         }
-        return;
-      }
-    }
-
-    setState(() => _isProcessingImage = true);
-
-    try {
-      final XFile? pickedFile = await _imagePicker.pickImage(
-        source: source,
-        maxWidth: 1024,
-        maxHeight: 1024,
-      );
-
-      if (pickedFile == null) {
-        setState(() => _isProcessingImage = false);
-        return;
-      }
-
-      // Read original image bytes (no background removal - ML Kit Selfie Segmentation only works for people)
-      final bytes = await File(pickedFile.path).readAsBytes();
-
-      if (mounted) {
-        setState(() {
-          _processedImageBytes = bytes;
-          _imageUrl = pickedFile.path;
-          _isProcessingImage = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isProcessingImage = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to pick image: $e')),
-        );
-      }
-    }
-  }
-
-  void _removeImage() {
-    setState(() {
-      _imageUrl = null;
-      _processedImageBytes = null;
-    });
-  }
-
-  /// Scan coffee bag image and auto-fill form fields
-  Future<void> _scanAndAutoFill() async {
-    if (_imageUrl == null && _processedImageBytes == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Please add a photo first', style: GoogleFonts.manrope()),
-          backgroundColor: AppColors.surfaceContainerHigh,
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Add Bean'),
         ),
-      );
-      return;
-    }
-
-    setState(() => _isScanning = true);
-
-    try {
-      // Extract text from image using OCR
-      String extractedText;
-      if (_processedImageBytes != null) {
-        extractedText = await _ocrService.extractTextFromBytes(_processedImageBytes!);
-      } else if (_imageUrl != null) {
-        extractedText = await _ocrService.extractTextFromImage(File(_imageUrl!));
-      } else {
-        return;
-      }
-
-      if (extractedText.trim().isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('No text found in image', style: GoogleFonts.manrope()),
-              backgroundColor: AppColors.surfaceContainerHigh,
-            ),
-          );
-        }
-        return;
-      }
-
-      // Parse extracted text into bean info
-      final beanInfo = await _parser.parseBeanInfo(extractedText);
-
-      if (mounted) {
-        setState(() {
-          // Auto-fill form fields
-          if (beanInfo.name.isNotEmpty) _nameController.text = beanInfo.name;
-          if (beanInfo.roaster.isNotEmpty) _roasterController.text = beanInfo.roaster;
-          if (beanInfo.origin != null) _originController.text = beanInfo.origin!;
-          if (beanInfo.variety != null) _varietyController.text = beanInfo.variety!;
-          if (beanInfo.process != null) _processController.text = beanInfo.process!;
-          if (beanInfo.notes != null) _notesController.text = beanInfo.notes!;
-          if (beanInfo.roastLevel != null) {
-            _roastLevel = _normalizeRoastLevel(beanInfo.roastLevel!);
-          }
-          _isScanning = false;
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Form auto-filled!', style: GoogleFonts.manrope()),
-            backgroundColor: AppColors.secondary,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isScanning = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Scan failed: $e', style: GoogleFonts.manrope()),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    }
-  }
-
-  String? _normalizeRoastLevel(String level) {
-    final upper = level.toUpperCase();
-    if (upper.contains('LIGHT')) return 'Light';
-    if (upper.contains('MEDIUM-LIGHT')) return 'Medium-Light';
-    if (upper.contains('MEDIUM-DARK') || upper.contains('MEDIUM DARK')) return 'Medium-Dark';
-    if (upper.contains('MEDIUM')) return 'Medium';
-    if (upper.contains('DARK')) return 'Dark';
-    return null;
-  }
-
-  Future<void> _saveBean() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    final beanId = const Uuid().v4();
-
-    String? finalImageUrl;
-    if (_processedImageBytes != null) {
-      try {
-        finalImageUrl = await ref.read(beansProvider.notifier).saveBeanImage(
-          _processedImageBytes!,
-          beanId,
-        );
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to save image: $e')),
-          );
-        }
-      }
-    }
-
-    final bean = Bean.create(
-      name: _nameController.text,
-      roaster: _roasterController.text,
-      origin: _originController.text.isNotEmpty ? _originController.text : null,
-      variety: _varietyController.text.isNotEmpty ? _varietyController.text : null,
-      process: _processController.text.isNotEmpty ? _processController.text : null,
-      roastLevel: _roastLevel,
-      roastDate: _roastDate,
-      weightRemaining: _weight,
-      weightInitial: _weight,
-      notes: _notesController.text.isNotEmpty ? _notesController.text : null,
-      imageUrl: finalImageUrl,
-    );
-
-    await ref.read(beansProvider.notifier).addBean(bean);
-
-    if (mounted) context.pop();
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final Color color;
-
-  const _SectionHeader({required this.title, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: GoogleFonts.notoSerif(
-        fontSize: 18,
-        fontWeight: FontWeight.w400,
-        color: color,
-      ),
-    );
-  }
-}
-
-class _TonalCard extends StatelessWidget {
-  final Color backgroundColor;
-  final Widget child;
-
-  const _TonalCard({required this.backgroundColor, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: child,
-    );
-  }
-}
-
-class _DesignTextField extends StatefulWidget {
-  final TextEditingController controller;
-  final String label;
-  final String hint;
-  final Color textColor;
-  final Color hintColor;
-  final Color accentColor;
-  final String? Function(String?)? validator;
-  final int maxLines;
-
-  const _DesignTextField({
-    required this.controller,
-    required this.label,
-    required this.hint,
-    required this.textColor,
-    required this.hintColor,
-    required this.accentColor,
-    this.validator,
-    this.maxLines = 1,
-  });
-
-  @override
-  State<_DesignTextField> createState() => _DesignTextFieldState();
-}
-
-class _DesignTextFieldState extends State<_DesignTextField> {
-  bool _isFocused = false;
-  final _focusNode = FocusNode();
-
-  @override
-  void initState() {
-    super.initState();
-    _focusNode.addListener(() {
-      setState(() => _isFocused = _focusNode.hasFocus);
-    });
-  }
-
-  @override
-  void dispose() {
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          widget.label,
-          style: GoogleFonts.manrope(
-            fontSize: 14,
-            color: widget.hintColor,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.surfaceContainer,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
+        body: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
             children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: 4,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: _isFocused ? widget.accentColor : Colors.transparent,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(8),
-                    bottomLeft: Radius.circular(8),
-                  ),
+              // Name
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Bean Name *',
+                  hintText: 'e.g., Ethiopia Yirgacheffe',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter bean name';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Roaster
+              TextFormField(
+                controller: _roasterController,
+                decoration: const InputDecoration(
+                  labelText: 'Roaster *',
+                  hintText: 'e.g., local roaster',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter roaster name';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Origin
+              TextFormField(
+                controller: _originController,
+                decoration: const InputDecoration(
+                  labelText: 'Origin',
+                  hintText: 'e.g., Ethiopia',
+                  border: OutlineInputBorder(),
                 ),
               ),
-              Expanded(
-                child: TextFormField(
-                  controller: widget.controller,
-                  focusNode: _focusNode,
-                  style: GoogleFonts.manrope(
-                    fontSize: 15,
-                    color: widget.textColor,
-                  ),
-                  maxLines: widget.maxLines,
-                  decoration: InputDecoration(
-                    hintText: widget.hint,
-                    hintStyle: GoogleFonts.manrope(
-                      fontSize: 15,
-                      color: widget.hintColor.withOpacity(0.6),
-                    ),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                  ),
-                  validator: widget.validator,
+              const SizedBox(height: 16),
+
+              // Variety
+              TextFormField(
+                controller: _varietyController,
+                decoration: const InputDecoration(
+                  labelText: 'Variety',
+                  hintText: 'e.g., Heirloom',
+                  border: OutlineInputBorder(),
                 ),
+              ),
+              const SizedBox(height: 16),
+
+              // Process
+              TextFormField(
+                controller: _processController,
+                decoration: const InputDecoration(
+                  labelText: 'Process',
+                  hintText: 'e.g., Washed, Natural',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Roast Level
+              DropdownButtonFormField<String>(
+                value: _roastLevel,
+                decoration: const InputDecoration(
+                  labelText: 'Roast Level',
+                  border: OutlineInputBorder(),
+                ),
+                items: _roastLevels.map((level) {
+                  return DropdownMenuItem(value: level, child: Text(level));
+                }).toList(),
+                onChanged: (value) => setState(() => _roastLevel = value),
+              ),
+              const SizedBox(height: 16),
+
+              // Roast Date
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Roast Date'),
+                subtitle: Text(
+                  _roastDate != null
+                      ? DateFormat.yMMMd().format(_roastDate!)
+                      : 'Not set',
+                ),
+                trailing: IconButton(
+                  icon: const Icon(Icons.calendar_today),
+                  onPressed: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: _roastDate ?? DateTime.now(),
+                      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                      lastDate: DateTime.now(),
+                    );
+                    if (date != null) {
+                      setState(() => _roastDate = date);
+                    }
+                  },
+                ),
+              ),
+              const Divider(),
+              const SizedBox(height: 16),
+
+              // Weight slider
+              LabeledSlider(
+                label: 'Weight',
+                value: _weight,
+                min: 50,
+                max: 1000,
+                unit: 'g',
+                divisions: 95,
+                onChanged: (value) => setState(() => _weight = value),
+              ),
+              const SizedBox(height: 16),
+
+              // Notes
+              TextFormField(
+                controller: _notesController,
+                decoration: const InputDecoration(
+                  labelText: 'Notes',
+                  hintText: 'Tasting notes, roaster info...',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+              ),
+              const SizedBox(height: 24),
+
+              // Save button
+              FilledButton(
+                onPressed: _saveBean,
+                child: const Text('Save Bean'),
               ),
             ],
           ),
         ),
-      ],
-    );
-  }
-}
-
-class _RoastChip extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final Color selectedColor;
-  final Color backgroundColor;
-  final Color textColor;
-  final Color selectedTextColor;
-  final VoidCallback onTap;
-
-  const _RoastChip({
-    required this.label,
-    required this.isSelected,
-    required this.selectedColor,
-    required this.backgroundColor,
-    required this.textColor,
-    required this.selectedTextColor,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? selectedColor : backgroundColor,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          label,
-          style: GoogleFonts.manrope(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: isSelected ? selectedTextColor : textColor,
-          ),
-        ),
       ),
     );
   }
-}
 
-class _CustomSlider extends StatelessWidget {
-  final double value;
-  final double min;
-  final double max;
-  final ValueChanged<double> onChanged;
-  final Color activeColor;
-  final Color trackColor;
+  void _saveBean() {
+    if (_formKey.currentState!.validate()) {
+      final bean = Bean.create(
+        name: _nameController.text,
+        roaster: _roasterController.text,
+        origin: _originController.text.isNotEmpty ? _originController.text : null,
+        variety: _varietyController.text.isNotEmpty ? _varietyController.text : null,
+        process: _processController.text.isNotEmpty ? _processController.text : null,
+        roastLevel: _roastLevel,
+        roastDate: _roastDate,
+        weightRemaining: _weight,
+        weightInitial: _weight,
+        notes: _notesController.text.isNotEmpty ? _notesController.text : null,
+      );
 
-  const _CustomSlider({
-    required this.value,
-    required this.min,
-    required this.max,
-    required this.onChanged,
-    required this.activeColor,
-    required this.trackColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SliderTheme(
-      data: SliderThemeData(
-        trackHeight: 4,
-        activeTrackColor: activeColor,
-        inactiveTrackColor: trackColor,
-        thumbColor: activeColor,
-        overlayColor: activeColor.withOpacity(0.2),
-        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
-      ),
-      child: Slider(
-        value: value,
-        min: min,
-        max: max,
-        onChanged: onChanged,
-      ),
-    );
-  }
-}
-
-class _BeanImagePicker extends StatelessWidget {
-  final String? imageUrl;
-  final Uint8List? processedImageBytes;
-  final bool isProcessing;
-  final bool isScanning;
-  final VoidCallback onCameraTap;
-  final VoidCallback onGalleryTap;
-  final VoidCallback onDeleteTap;
-  final VoidCallback onScanTap;
-
-  const _BeanImagePicker({
-    this.imageUrl,
-    this.processedImageBytes,
-    required this.isProcessing,
-    required this.isScanning,
-    required this.onCameraTap,
-    required this.onGalleryTap,
-    required this.onDeleteTap,
-    required this.onScanTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final hasImage = imageUrl != null || processedImageBytes != null;
-
-    return Container(
-      height: 200,
-      width: double.infinity,
-      margin: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 2)),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          if (isProcessing)
-            const Center(child: CircularProgressIndicator())
-          else if (processedImageBytes != null)
-            Image.memory(
-              processedImageBytes!,
-              fit: BoxFit.cover,
-            )
-          else if (imageUrl != null)
-            Image.file(
-              File(imageUrl!),
-              fit: BoxFit.cover,
-            )
-          else
-            GestureDetector(
-              onTap: onCameraTap,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.add_a_photo_outlined,
-                    size: 48,
-                    color: AppColors.onSurfaceVariant,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Tap to add photo',
-                    style: GoogleFonts.manrope(
-                      color: AppColors.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          if (hasImage)
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [Colors.transparent, Colors.black.withOpacity(0.3)],
-                  ),
-                ),
-              ),
-            ),
-          Positioned(
-            top: 8,
-            right: 8,
-            child: Row(
-              children: [
-                _ActionButton(icon: Icons.camera_alt, onTap: onCameraTap),
-                const SizedBox(width: 8),
-                _ActionButton(icon: Icons.photo_library, onTap: onGalleryTap),
-                if (hasImage) ...[
-                  const SizedBox(width: 8),
-                  _ActionButton(
-                    icon: isScanning ? Icons.hourglass_empty : Icons.document_scanner,
-                    onTap: isScanning ? () {} : onScanTap,
-                  ),
-                  const SizedBox(width: 8),
-                  _ActionButton(icon: Icons.delete, onTap: onDeleteTap),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ActionButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _ActionButton({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.5),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon, color: Colors.white, size: 20),
-      ),
-    );
+      context.read<BeansBloc>().add(BeanCreated(bean));
+    }
   }
 }

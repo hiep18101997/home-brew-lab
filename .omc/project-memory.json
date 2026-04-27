@@ -206,6 +206,12 @@
       "type": "file"
     },
     {
+      "path": "test\\widget_test.dart",
+      "accessCount": 4,
+      "lastAccessed": 1777282170055,
+      "type": "file"
+    },
+    {
       "path": ".worktrees\\bean-photo",
       "accessCount": 3,
       "lastAccessed": 1776182658744,
@@ -269,6 +275,12 @@
       "path": "lib\\presentation\\providers\\analytics_provider.dart",
       "accessCount": 2,
       "lastAccessed": 1776185957107,
+      "type": "file"
+    },
+    {
+      "path": "lib\\presentation\\screens\\brew\\brew_timer_screen.dart",
+      "accessCount": 2,
+      "lastAccessed": 1777282094512,
       "type": "file"
     },
     {
@@ -371,6 +383,12 @@
       "path": "lib\\data\\grinder_settings_repository.dart",
       "accessCount": 1,
       "lastAccessed": 1776186735831,
+      "type": "file"
+    },
+    {
+      "path": "lib\\domain\\entities\\brew_guide.dart",
+      "accessCount": 1,
+      "lastAccessed": 1777282088057,
       "type": "file"
     }
   ],

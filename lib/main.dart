@@ -1,12 +1,31 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'injection.dart';
+import 'features/beans/presentation/bloc/beans_bloc.dart';
+import 'features/beans/presentation/bloc/beans_event.dart';
+import 'features/brew/presentation/bloc/brew_bloc.dart';
+import 'features/brew/presentation/bloc/brew_event.dart';
+import 'features/analytics/presentation/bloc/analytics_bloc.dart';
+import 'features/analytics/presentation/bloc/analytics_event.dart';
+import 'features/grinder/presentation/bloc/grinder_bloc.dart';
+import 'features/grinder/presentation/bloc/grinder_event.dart';
+import 'features/recipe/presentation/bloc/recipe_bloc.dart';
+import 'features/recipe/presentation/bloc/recipe_event.dart';
 import 'app.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await setupDependencies();
   runApp(
-    const ProviderScope(
-      child: CoffeeBrewingApp(),
+    MultiBlocProvider(
+      providers: [
+        BlocProvider<BeansBloc>(create: (_) => getIt<BeansBloc>()..add(BeansRequested())),
+        BlocProvider<BrewBloc>(create: (_) => getIt<BrewBloc>()..add(BrewLogsRequested())),
+        BlocProvider<AnalyticsBloc>(create: (_) => getIt<AnalyticsBloc>()..add(AnalyticsRequested())),
+        BlocProvider<GrinderBloc>(create: (_) => getIt<GrinderBloc>()..add(GrinderBrandsRequested())),
+        BlocProvider<RecipeBloc>(create: (_) => getIt<RecipeBloc>()..add(RecipesRequested())),
+      ],
+      child: const CoffeeBrewingApp(),
     ),
   );
 }
