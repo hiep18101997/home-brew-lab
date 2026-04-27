@@ -1,0 +1,532 @@
+{
+  "version": 1,
+  "generatedAt": "2026-04-19T13:35:35.407Z",
+  "directories": {
+    ".": {
+      "files": [
+        ".flutter-plugins-dependencies",
+        ".gitignore",
+        ".metadata",
+        "AGENTS.md",
+        "CLAUDE.md",
+        "README.md",
+        "analysis_options.yaml",
+        "coffee_brewing_companion.iml",
+        "pubspec.lock",
+        "pubspec.yaml"
+      ]
+    },
+    "android": {
+      "files": [
+        ".gitignore",
+        "build.gradle.kts",
+        "coffee_brewing_companion_android.iml",
+        "gradle.properties",
+        "gradlew",
+        "gradlew.bat",
+        "local.properties",
+        "settings.gradle.kts"
+      ]
+    },
+    "android/app": {
+      "files": [
+        "build.gradle.kts"
+      ]
+    },
+    "android/app/src/debug": {
+      "files": [
+        "AndroidManifest.xml"
+      ]
+    },
+    "android/app/src/main": {
+      "files": [
+        "AndroidManifest.xml"
+      ]
+    },
+    "android/app/src/main/java/io/flutter/plugins": {
+      "files": [
+        "GeneratedPluginRegistrant.java"
+      ]
+    },
+    "android/app/src/main/kotlin/com/homebrewlab/coffee_brewing_companion": {
+      "files": [
+        "MainActivity.kt"
+      ]
+    },
+    "android/app/src/main/res/drawable": {
+      "files": [
+        "launch_background.xml"
+      ]
+    },
+    "android/app/src/main/res/drawable-v21": {
+      "files": [
+        "launch_background.xml"
+      ]
+    },
+    "android/app/src/main/res/mipmap-hdpi": {
+      "files": [
+        "ic_launcher.png"
+      ]
+    },
+    "android/app/src/main/res/mipmap-mdpi": {
+      "files": [
+        "ic_launcher.png"
+      ]
+    },
+    "android/app/src/main/res/mipmap-xhdpi": {
+      "files": [
+        "ic_launcher.png"
+      ]
+    },
+    "android/app/src/main/res/mipmap-xxhdpi": {
+      "files": [
+        "ic_launcher.png"
+      ]
+    },
+    "android/app/src/main/res/mipmap-xxxhdpi": {
+      "files": [
+        "ic_launcher.png"
+      ]
+    },
+    "android/app/src/main/res/values": {
+      "files": [
+        "styles.xml"
+      ]
+    },
+    "android/app/src/main/res/values-night": {
+      "files": [
+        "styles.xml"
+      ]
+    },
+    "android/app/src/profile": {
+      "files": [
+        "AndroidManifest.xml"
+      ]
+    },
+    "android/gradle/wrapper": {
+      "files": [
+        "gradle-wrapper.jar",
+        "gradle-wrapper.properties"
+      ]
+    },
+    "docs/superpowers/plans": {
+      "files": [
+        "2026-04-13-clean-architecture-refactor-plan.md",
+        "2026-04-14-bean-photo-background-removal-plan.md"
+      ]
+    },
+    "docs/superpowers/specs": {
+      "files": [
+        "2026-04-13-clean-architecture-refactor-design.md",
+        "2026-04-14-bean-photo-background-removal-design.md"
+      ]
+    },
+    "ios": {
+      "files": [
+        ".gitignore"
+      ]
+    },
+    "ios/Flutter": {
+      "files": [
+        "AppFrameworkInfo.plist",
+        "Debug.xcconfig",
+        "Generated.xcconfig",
+        "Release.xcconfig",
+        "flutter_export_environment.sh"
+      ]
+    },
+    "ios/Flutter/ephemeral": {
+      "files": [
+        "flutter_lldb_helper.py",
+        "flutter_lldbinit"
+      ]
+    },
+    "ios/Runner": {
+      "files": [
+        "AppDelegate.swift",
+        "GeneratedPluginRegistrant.h",
+        "GeneratedPluginRegistrant.m",
+        "Info.plist",
+        "Runner-Bridging-Header.h",
+        "SceneDelegate.swift"
+      ]
+    },
+    "ios/Runner/Assets.xcassets/AppIcon.appiconset": {
+      "files": [
+        "Contents.json",
+        "Icon-App-1024x1024@1x.png",
+        "Icon-App-20x20@1x.png",
+        "Icon-App-20x20@2x.png",
+        "Icon-App-20x20@3x.png",
+        "Icon-App-29x29@1x.png",
+        "Icon-App-29x29@2x.png",
+        "Icon-App-29x29@3x.png",
+        "Icon-App-40x40@1x.png",
+        "Icon-App-40x40@2x.png",
+        "Icon-App-40x40@3x.png",
+        "Icon-App-60x60@2x.png",
+        "Icon-App-60x60@3x.png",
+        "Icon-App-76x76@1x.png",
+        "Icon-App-76x76@2x.png",
+        "Icon-App-83.5x83.5@2x.png"
+      ]
+    },
+    "ios/Runner/Assets.xcassets/LaunchImage.imageset": {
+      "files": [
+        "Contents.json",
+        "LaunchImage.png",
+        "LaunchImage@2x.png",
+        "LaunchImage@3x.png",
+        "README.md"
+      ]
+    },
+    "ios/Runner/Base.lproj": {
+      "files": [
+        "LaunchScreen.storyboard",
+        "Main.storyboard"
+      ]
+    },
+    "ios/Runner.xcodeproj": {
+      "files": [
+        "project.pbxproj"
+      ]
+    },
+    "ios/Runner.xcodeproj/project.xcworkspace": {
+      "files": [
+        "contents.xcworkspacedata"
+      ]
+    },
+    "ios/Runner.xcodeproj/project.xcworkspace/xcshareddata": {
+      "files": [
+        "IDEWorkspaceChecks.plist",
+        "WorkspaceSettings.xcsettings"
+      ]
+    },
+    "ios/Runner.xcodeproj/xcshareddata/xcschemes": {
+      "files": [
+        "Runner.xcscheme"
+      ]
+    },
+    "ios/Runner.xcworkspace": {
+      "files": [
+        "contents.xcworkspacedata"
+      ]
+    },
+    "ios/Runner.xcworkspace/xcshareddata": {
+      "files": [
+        "IDEWorkspaceChecks.plist",
+        "WorkspaceSettings.xcsettings"
+      ]
+    },
+    "ios/RunnerTests": {
+      "files": [
+        "RunnerTests.swift"
+      ]
+    },
+    "lib": {
+      "files": [
+        "app.dart",
+        "main.dart"
+      ]
+    },
+    "lib/core": {
+      "files": [
+        "AGENTS.md"
+      ]
+    },
+    "lib/core/constants": {
+      "files": [
+        "AGENTS.md",
+        "brew_methods.dart",
+        "flavor_tags.dart"
+      ]
+    },
+    "lib/core/services": {
+      "files": [
+        "AGENTS.md",
+        "bean_info_parser.dart",
+        "ocr_service.dart"
+      ]
+    },
+    "lib/core/theme": {
+      "files": [
+        "AGENTS.md",
+        "app_theme.dart"
+      ]
+    },
+    "lib/core/utils": {
+      "files": [
+        "AGENTS.md",
+        "extraction_calculator.dart"
+      ]
+    },
+    "lib/data": {
+      "files": [
+        "AGENTS.md",
+        "grinder_settings_repository.dart"
+      ]
+    },
+    "lib/domain": {
+      "files": [
+        "AGENTS.md"
+      ]
+    },
+    "lib/domain/constants": {
+      "files": [
+        "AGENTS.md",
+        "brew_methods.dart"
+      ]
+    },
+    "lib/domain/entities": {
+      "files": [
+        "AGENTS.md",
+        "bean.dart",
+        "brew_guide.dart",
+        "brew_log.dart",
+        "grinder_profile.dart",
+        "recipe.dart"
+      ]
+    },
+    "lib/domain/repositories": {
+      "files": [
+        "AGENTS.md",
+        "bean_repository.dart",
+        "brew_repository.dart"
+      ]
+    },
+    "lib/presentation": {
+      "files": [
+        "AGENTS.md"
+      ]
+    },
+    "lib/presentation/providers": {
+      "files": [
+        "AGENTS.md",
+        "analytics_provider.dart",
+        "beans_provider.dart",
+        "brew_logs_provider.dart",
+        "brew_timer_provider.dart",
+        "grinder_settings_provider.dart"
+      ]
+    },
+    "lib/presentation/screens": {
+      "files": [
+        "splash_screen.dart"
+      ]
+    },
+    "lib/presentation/screens/analytics": {
+      "files": [
+        "AGENTS.md",
+        "analytics_screen.dart"
+      ]
+    },
+    "lib/presentation/screens/beans": {
+      "files": [
+        "AGENTS.md",
+        "add_bean_screen.dart",
+        "bean_detail_screen.dart",
+        "bean_list_screen.dart"
+      ]
+    },
+    "lib/presentation/screens/brew": {
+      "files": [
+        "AGENTS.md",
+        "brew_history_screen.dart",
+        "brew_timer_screen.dart",
+        "new_brew_screen.dart"
+      ]
+    },
+    "lib/presentation/screens/home": {
+      "files": [
+        "AGENTS.md",
+        "home_screen.dart"
+      ]
+    },
+    "lib/presentation/screens/home/widgets": {
+      "files": [
+        "AGENTS.md",
+        "home_content.dart"
+      ]
+    },
+    "lib/presentation/screens/profile": {
+      "files": [
+        "AGENTS.md",
+        "profile_screen.dart"
+      ]
+    },
+    "lib/presentation/screens/recipes": {
+      "files": [
+        "AGENTS.md",
+        "recipe_finder_screen.dart"
+      ]
+    },
+    "lib/presentation/widgets": {
+      "files": [
+        "AGENTS.md",
+        "bean_card.dart",
+        "brew_guide_card.dart",
+        "rating_input.dart",
+        "sliders.dart",
+        "timer_display.dart"
+      ]
+    },
+    "linux": {
+      "files": [
+        ".gitignore",
+        "CMakeLists.txt"
+      ]
+    },
+    "linux/flutter": {
+      "files": [
+        "CMakeLists.txt",
+        "generated_plugin_registrant.cc",
+        "generated_plugin_registrant.h",
+        "generated_plugins.cmake"
+      ]
+    },
+    "linux/runner": {
+      "files": [
+        "CMakeLists.txt",
+        "main.cc",
+        "my_application.cc",
+        "my_application.h"
+      ]
+    },
+    "macos": {
+      "files": [
+        ".gitignore"
+      ]
+    },
+    "macos/Flutter": {
+      "files": [
+        "Flutter-Debug.xcconfig",
+        "Flutter-Release.xcconfig",
+        "GeneratedPluginRegistrant.swift"
+      ]
+    },
+    "macos/Flutter/ephemeral": {
+      "files": [
+        "Flutter-Generated.xcconfig",
+        "flutter_export_environment.sh"
+      ]
+    },
+    "macos/Runner": {
+      "files": [
+        "AppDelegate.swift",
+        "DebugProfile.entitlements",
+        "Info.plist",
+        "MainFlutterWindow.swift",
+        "Release.entitlements"
+      ]
+    },
+    "macos/Runner/Assets.xcassets/AppIcon.appiconset": {
+      "files": [
+        "Contents.json",
+        "app_icon_1024.png",
+        "app_icon_128.png",
+        "app_icon_16.png",
+        "app_icon_256.png",
+        "app_icon_32.png",
+        "app_icon_512.png",
+        "app_icon_64.png"
+      ]
+    },
+    "macos/Runner/Base.lproj": {
+      "files": [
+        "MainMenu.xib"
+      ]
+    },
+    "macos/Runner/Configs": {
+      "files": [
+        "AppInfo.xcconfig",
+        "Debug.xcconfig",
+        "Release.xcconfig",
+        "Warnings.xcconfig"
+      ]
+    },
+    "macos/Runner.xcodeproj": {
+      "files": [
+        "project.pbxproj"
+      ]
+    },
+    "macos/Runner.xcodeproj/project.xcworkspace/xcshareddata": {
+      "files": [
+        "IDEWorkspaceChecks.plist"
+      ]
+    },
+    "macos/Runner.xcodeproj/xcshareddata/xcschemes": {
+      "files": [
+        "Runner.xcscheme"
+      ]
+    },
+    "macos/Runner.xcworkspace": {
+      "files": [
+        "contents.xcworkspacedata"
+      ]
+    },
+    "macos/Runner.xcworkspace/xcshareddata": {
+      "files": [
+        "IDEWorkspaceChecks.plist"
+      ]
+    },
+    "macos/RunnerTests": {
+      "files": [
+        "RunnerTests.swift"
+      ]
+    },
+    "test": {
+      "files": [
+        "widget_test.dart"
+      ]
+    },
+    "web": {
+      "files": [
+        "favicon.png",
+        "index.html",
+        "manifest.json"
+      ]
+    },
+    "web/icons": {
+      "files": [
+        "Icon-192.png",
+        "Icon-512.png",
+        "Icon-maskable-192.png",
+        "Icon-maskable-512.png"
+      ]
+    },
+    "windows": {
+      "files": [
+        ".gitignore",
+        "CMakeLists.txt"
+      ]
+    },
+    "windows/flutter": {
+      "files": [
+        "CMakeLists.txt",
+        "generated_plugin_registrant.cc",
+        "generated_plugin_registrant.h",
+        "generated_plugins.cmake"
+      ]
+    },
+    "windows/runner": {
+      "files": [
+        "CMakeLists.txt",
+        "Runner.rc",
+        "flutter_window.cpp",
+        "flutter_window.h",
+        "main.cpp",
+        "resource.h",
+        "runner.exe.manifest",
+        "utils.cpp",
+        "utils.h",
+        "win32_window.cpp",
+        "win32_window.h"
+      ]
+    },
+    "windows/runner/resources": {
+      "files": [
+        "app_icon.ico"
+      ]
+    }
+  }
+}

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -9,17 +10,24 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  Timer? _timer;
+
   @override
   void initState() {
     super.initState();
-    _navigateToHome();
+    _timer = Timer(const Duration(seconds: 2), _navigateToHome);
   }
 
-  Future<void> _navigateToHome() async {
-    await Future.delayed(const Duration(seconds: 2));
+  void _navigateToHome() {
     if (mounted) {
       context.go('/home');
     }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   @override
